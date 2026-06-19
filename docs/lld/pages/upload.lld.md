@@ -11,8 +11,9 @@ In scope:
 
 - Select or drag one `.xml` file.
 - Upload with `multipart/form-data` field `file`.
-- Generate and send required `Idempotency-Key` before every upload request.
-- Send optional `X-Correlation-Id` header.
+- Generate and send frontend-required `Idempotency-Key` before every upload
+  request.
+- Send frontend-generated `X-Correlation-Id` header for support tracing.
 - Show import summary and invoice-level errors returned by the API.
 - Show fatal validation, upload size, unsupported media type, network, and server
   errors.
@@ -27,6 +28,7 @@ Out of scope:
 ## Source Inputs
 
 - OpenAPI path `POST /api/v1/bulk-invoices/import`.
+- UI reference: `frontend/docs/lld/pages/admin-ui-design-reference.template.md`.
 - API base URL from runtime frontend config.
 - User-selected XML file.
 - Browser-generated upload request.
@@ -44,7 +46,7 @@ Out of scope:
 
 - Path: `/upload`
 - Navigation label: `Upload`
-- Page title: `XML feltoltes`
+- Page title: `XML upload`
 - Access: authenticated route if auth is later added.
 
 ## UI Model
@@ -83,9 +85,10 @@ type UploadState =
 Headers:
 
 - `Content-Type`: set by browser for `multipart/form-data`.
-- `Idempotency-Key`: required frontend-generated UUID per selected file upload
-  attempt.
-- `X-Correlation-Id`: generated UUID per request.
+- `Idempotency-Key`: frontend-generated UUID per selected file upload attempt.
+  Frontend always sends it; backend accepts it as optional for non-UI callers.
+- `X-Correlation-Id`: frontend-generated UUID per request. Backend can generate
+  one for non-UI callers if missing.
 
 Body:
 
@@ -130,13 +133,38 @@ type BulkInvoiceImportError = {
 ### Error Responses
 
 - `400`: parse as `BulkInvoiceImportResponse` and render all `errors`.
-- `413`: show `A fajl tul nagy.`
-- `415`: show `Nem tamogatott fajltipus. XML fajlt tolts fel.`
+- `413`: show `The file is too large.`
+- `415`: show `Unsupported file type. Upload an XML file.`
 - `500`: show generic server failure text.
 - Network failure: show API connection failure text.
 
 If response content type is JSON and shape contains `errors`, render each error.
 If JSON parse fails, render HTTP status and generic text.
+
+## Runtime Configuration
+
+Read API base URL from generated runtime config:
+
+```ts
+type RuntimeConfig = {
+  apiProtocol: "http" | "https";
+  apiHost: string;
+  apiPort?: string;
+  apiBaseUrl: string;
+};
+```
+
+Build `apiBaseUrl` as:
+
+- `${apiProtocol}://${apiHost}` when `apiPort` is empty.
+- `${apiProtocol}://${apiHost}:${apiPort}` when `apiPort` has a value.
+
+Production expected values:
+
+- `apiProtocol=https`
+- `apiHost=api.garamol.com`
+- `apiPort=` empty unless reverse proxy exposes a non-standard port.
+- Frontend app default port: `3000`.
 
 ## Validation Rules
 
@@ -172,9 +200,9 @@ rates, duplicates, and size limit.
 
 Status labels:
 
-- `completed`: sikeres import.
-- `completed_with_errors`: reszben sikeres import.
-- `failed`: sikertelen import.
+- `completed`: import completed.
+- `completed_with_errors`: import completed with errors.
+- `failed`: import failed.
 
 Summary fields:
 
@@ -204,8 +232,9 @@ Hide optional columns only when every row has no value for that column.
 - Keep backend `errorCode` visible for support.
 - Do not show stack traces or raw exception bodies.
 - Preserve `X-Correlation-Id` in state and show it when a request fails.
-- Retry button sends a new request with a new idempotency key unless user retries
-  the same pending request after a transient network failure.
+- Retry button reuses the same idempotency key only when the previous attempt
+  ended with no backend response because of a network failure.
+- Retry button uses a new idempotency key after any visible backend response.
 
 ## Logging And Audit
 
@@ -273,6 +302,8 @@ Mock the API client. Do not mock pure response mappers.
 - Provider contract owner: backend API.
 - Consumer contract owner: frontend upload page.
 - Validate `multipart/form-data` field name remains `file`.
+- Validate frontend upload requests include `Idempotency-Key` and
+  `X-Correlation-Id`.
 - Validate `200` and `400` bodies match `BulkInvoiceImportResponse`.
 - Validate `status` enum values remain `completed`, `completed_with_errors`, and
   `failed`.

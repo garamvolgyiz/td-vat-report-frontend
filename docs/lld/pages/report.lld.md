@@ -33,6 +33,7 @@ Out of scope:
 - OpenAPI path `GET /api/v1/sellers`.
 - OpenAPI path `GET /api/v1/vat-declarations/report`.
 - OpenAPI path `GET /api/v1/vat-declarations/report/pdf`.
+- UI reference: `frontend/docs/lld/pages/admin-ui-design-reference.template.md`.
 - API base URL from runtime frontend config.
 - User-selected seller and dates.
 
@@ -48,8 +49,8 @@ Out of scope:
 ## Route
 
 - Path: `/report`
-- Navigation label: `AFA bevallas`
-- Page title: `AFA bevallas`
+- Navigation label: `VAT report`
+- Page title: `VAT declaration`
 - Access: authenticated route if auth is later added.
 
 ## UI Model
@@ -69,7 +70,7 @@ Components:
 - `ReportErrorAlert`
   - Shows API and validation errors.
 - `DownloadPdfButton`
-  - Uses the current valid filter.
+  - Uses the last submitted valid filter for the displayed report.
 
 State:
 
@@ -82,7 +83,12 @@ type SellersState =
 type ReportState =
   | { status: "idle" }
   | { status: "loading"; filter: VatReportFilter }
-  | { status: "loaded"; filter: VatReportFilter; result: VatDeclarationReportResult }
+  | {
+      status: "loaded";
+      filter: VatReportFilter;
+      result: VatDeclarationReportResult;
+      isStale: boolean;
+    }
   | { status: "failed"; filter?: VatReportFilter; error: PageError };
 ```
 
@@ -194,9 +200,10 @@ aggregation, and PDF generation.
 6. Client validates filter.
 7. Client sends JSON report request.
 8. Page renders header, inbound table, and outbound table.
-9. User clicks PDF download.
-10. Client sends PDF request with the same filter.
-11. Browser downloads PDF blob.
+9. If user edits form values after result load, mark displayed result stale.
+10. User clicks PDF download for the displayed report.
+11. Client sends PDF request with the last submitted valid filter.
+12. Browser downloads PDF blob.
 
 ## Result Rendering
 
@@ -207,7 +214,8 @@ Header:
 
 Tables:
 
-- Two tables: `Bejovo szamlak` for `inbound`, `Kimeno szamlak` for `outbound`.
+- Two tables: `Incoming invoices` for `inbound`, `Outgoing invoices` for
+  `outbound`.
 - Columns:
   - VAT level
   - Total net amount
@@ -225,7 +233,7 @@ Empty states:
 
 - No sellers: show no-seller empty state and disable report submit.
 - Empty inbound or outbound arrays: show table empty state.
-- Zero rows from API: render zero values.
+- Rows with zero totals from API: render zero values.
 
 ## Error Handling
 
@@ -282,6 +290,9 @@ Backend owns report logging. No frontend audit persistence.
   requests.
 - PDF button uses the last submitted valid filter, not partially edited form
   state, when a JSON result is visible.
+- If form values change after result load, mark the result as stale. The PDF
+  button still downloads the displayed report using the last submitted valid
+  filter.
 
 ## Accessibility
 
@@ -298,8 +309,8 @@ Backend owns report logging. No frontend audit persistence.
 - Sellers API fails: show retry button.
 - Selected seller disappears before report request: backend returns `404`.
 - `dateFrom > dateTo`: block locally.
-- User changes filter after report loaded: mark result as stale or hide PDF until
-  user regenerates.
+- User changes filter after report loaded: mark result as stale and keep PDF
+  download tied to the displayed report.
 - PDF download fails after JSON report succeeds: keep JSON result visible and
   show PDF-specific error.
 - Browser blocks download: expose fallback link object URL during the click
