@@ -3,19 +3,23 @@ import { BarChart3, FileUp } from "lucide-react";
 
 type AdminShellProps = {
   children: ReactNode;
+  currentPath?: string;
 };
 
-export function AdminShell({ children }: AdminShellProps) {
+export function AdminShell({ children, currentPath = "/report" }: AdminShellProps) {
+  const isUpload = currentPath === "/upload" || currentPath === "/";
+  const isReport = currentPath === "/report";
+
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand">VAT admin</div>
         <nav className="nav-list">
-          <a className="nav-link" href="/upload">
+          <a className={`nav-link ${isUpload ? "active" : ""}`} href="/upload" aria-current={isUpload ? "page" : undefined}>
             <FileUp aria-hidden="true" size={18} />
             Upload
           </a>
-          <a className="nav-link active" href="/report" aria-current="page">
+          <a className={`nav-link ${isReport ? "active" : ""}`} href="/report" aria-current={isReport ? "page" : undefined}>
             <BarChart3 aria-hidden="true" size={18} />
             VAT report
           </a>
