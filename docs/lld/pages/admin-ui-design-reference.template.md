@@ -43,6 +43,7 @@ Recommended layout:
 Navigation:
 
 - `Upload`
+- `Template XML`
 - `VAT report`
 
 Shell behavior:
