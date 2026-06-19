@@ -7,6 +7,29 @@ React TypeScript admin frontend for VAT reporting.
 - `/upload` - XML VAT declaration upload, multipart import request, idempotency/correlation headers, import summary, and backend validation errors.
 - `/report` - seller selector, inclusive date range filter, JSON VAT declaration report tables, stale-result warning, and PDF download.
 
+## Out Of Scope From LLDs
+
+Upload page:
+
+- Editing XML before upload.
+- Bulk upload of multiple files.
+- Manual invoice correction UI.
+- Template generation UI.
+
+Report page:
+
+- Editing sellers or invoices.
+- Report history.
+- Report submission to NAV or other authority.
+- Client-side VAT recalculation.
+
+Template XML generator page:
+
+- Uploading the generated XML.
+- Editing generated XML in the browser.
+- Persisting previous template requests.
+- Client-side invoice or VAT rate generation.
+
 ## Environment
 
 The app reads API settings from `.env` through Vite `VITE_*` variables:
@@ -60,3 +83,7 @@ npm run test:e2e
 Unit tests cover date defaults, filter validation, report page behavior, upload validation, upload success, backend import errors, network retry state, and unmount abort behavior.
 API contract tests verify endpoint paths, query parameters, multipart field names, idempotency/correlation headers, backend error parsing, PDF filename handling, and upload response enums.
 E2E tests cover the report generation/PDF workflow and the XML upload/import workflow with mocked API responses.
+
+## Future Work
+
+- Implement support for backend-driven configuration of JWT token authentication behavior in the frontend.
