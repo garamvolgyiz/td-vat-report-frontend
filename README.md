@@ -37,6 +37,30 @@ window.__RUNTIME_CONFIG__ = {
 - `GET /api/v1/vat-declarations/report`
 - `GET /api/v1/vat-declarations/report/pdf`
 
+## Docker
+
+The Docker image builds the Vite app and serves it with nginx. Runtime API
+settings are generated into `runtime-config.js` when the container starts.
+
+Production `.env` example:
+
+```bash
+FRONTEND_PORT=3000
+API_PROTOCOL=https
+API_HOST=api.garamol.com
+API_PORT=
+API_BASE_URL=
+```
+
+Run:
+
+```bash
+docker compose up -d --build
+```
+
+The compose file uses container name `app` and joins the external `proxy-net`
+network for reverse proxy routing to `https://app.garamol.com`.
+
 ## Development
 
 ```bash
