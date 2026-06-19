@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      proxy-net:
+        aliases:
+          - app
+
+networks:
+  proxy-net:
+    external: true
