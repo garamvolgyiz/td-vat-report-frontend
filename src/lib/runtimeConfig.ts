@@ -11,6 +11,8 @@ declare global {
   }
 
   interface ImportMetaEnv {
+    readonly DEV?: boolean;
+    readonly VITEST?: string;
     readonly VITE_API_PROTOCOL?: "http" | "https";
     readonly VITE_API_HOST?: string;
     readonly VITE_API_PORT?: string;
